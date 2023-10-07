@@ -33,6 +33,7 @@ class Table:
         max: Union[str, list, None] = None,
         sum: Union[str, list, None] = None,
         avg: Union[str, list, None] = None,
+        count: Union[str, list, None] = None,
         where: Union[list, And, Or, None] = None,
         **query,
     ):
@@ -43,6 +44,7 @@ class Table:
             max=max,
             sum=sum,
             avg=avg,
+            count=count,
         )
 
         conditions = get_correct_conditions(where, **query)
@@ -59,6 +61,7 @@ class Table:
         max: Union[str, None] = None,
         sum: Union[str, None] = None,
         avg: Union[str, None] = None,
+        count: Union[str, None] = None,
         where: Union[list, And, Or, None] = None,
         **query,
     ) -> pd.Series:
@@ -69,6 +72,7 @@ class Table:
             max=max,
             sum=sum,
             avg=avg,
+            count=count,
             where=where,
             **query,
         )

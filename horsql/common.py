@@ -75,6 +75,7 @@ def format_columns(
     max: Union[str, list, None] = None,
     sum: Union[str, list, None] = None,
     avg: Union[str, list, None] = None,
+    count: Union[str, list, None] = None,
 ):
     columns = columns_to_list(columns)
     distinct = columns_to_list(distinct)
@@ -86,8 +87,9 @@ def format_columns(
     _max = columns_to_agg("max", max)
     _sum = columns_to_agg("sum", sum)
     _avg = columns_to_agg("avg", avg)
+    _count = columns_to_agg("count", count)
 
-    columns = ", ".join([*distinct, *columns, *_min, *_max, *_sum, *_avg])
+    columns = ", ".join([*distinct, *columns, *_min, *_max, *_sum, *_avg, *_count])
 
     if len(distinct):
         columns = "DISTINCT " + columns
