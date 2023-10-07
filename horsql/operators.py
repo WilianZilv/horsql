@@ -91,18 +91,6 @@ class Not(Operator):
     def params(self):
         return self.custom.params()
 
-class Is(Operator):
-    def __init__(self, value):
-        if common.is_iterable(value):
-            self.custom = IsIn(value)
-        else:
-            self.custom = Equals(value)
-
-    def build(self):
-        return self.custom.build()
-
-    def params(self):
-        return self.custom.params()
 
 class Is(Operator):
     def __init__(self, value):
