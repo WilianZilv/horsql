@@ -309,11 +309,17 @@ class Database:
             for x in df[[*primary_key, *columns]].replace({np.nan: None}).to_numpy()
         ]
 
+        udt_types = self.information_schema.columns.get(
+            ["column_name", "udt_name"], table_schema=schema, table_name=table
+        )
+        udt_types.loc[:, "udt_name"] = "::" + udt_types["udt_name"]
+        udt_types_map = udt_types.set_index("column_name")["udt_name"].to_dict()
+
         SQL = SQL.format(
             schema,
             table,
             alias,
-            ", ".join([f"{x} = df.{x}" for x in columns]),
+            ", ".join([f"{x} = df.{x}{udt_types_map.get(x, '')}" for x in columns]),
             ", ".join(["%s"] * len(values)),
             ", ".join([*primary_key, *columns]),
             " AND ".join([f"{alias}.{x} = df.{x}" for x in primary_key]),
