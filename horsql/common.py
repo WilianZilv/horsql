@@ -101,28 +101,3 @@ def get_correct_conditions(where: Union[list, dict, None] = None, **query):
         conditions = query
 
     return conditions
-
-
-def _paginate(seq, page_size):
-    """Consume an iterable and return it in chunks.
-
-    Every chunk is at most `page_size`. Never return an empty chunk.
-    """
-    page = []
-    it = iter(seq)
-    while True:
-        try:
-            for i in range(page_size):
-                page.append(next(it))
-            yield page
-            page = []
-        except StopIteration:
-            if page:
-                yield page
-            return
-
-
-def execute_batch(cur, sql, argslist, page_size=100):
-    for page in _paginate(argslist, page_size=page_size):
-        sqls = [cur.mogrify(sql, args) for args in page]
-        cur.execute(b";".join(sqls))

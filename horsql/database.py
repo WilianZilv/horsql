@@ -8,7 +8,6 @@ from horsql.common import (
     sanitize_params,
     format_columns,
     get_correct_conditions,
-    _paginate,
 )
 from horsql.query_builder import build_query
 from horsql.operators import Column, And, Or
@@ -272,7 +271,7 @@ class Database:
         return self.fetch(SQL, params)
 
     def insert(self, df, schema: str, table: str, commit=True):
-        return self.execute_values(df, schema, table, commit)
+        return self.execute_values(df, schema, table, commit=commit)
 
     def upsert(
         self,
@@ -281,15 +280,13 @@ class Database:
         table: str,
         on_conflict: list,
         update: list,
-        page_size=5000,
         commit=True,
     ):
-        return self.execute_batch(
+        return self.execute_values(
             df,
             schema,
             table,
             on_conflict=(on_conflict, update),
-            page_size=page_size,
             commit=commit,
         )
 
@@ -332,7 +329,14 @@ class Database:
 
         self.commit()
 
-    def execute_values(self, df, schema: str, table: str, commit=True):
+    def execute_values(
+        self,
+        df,
+        schema: str,
+        table: str,
+        on_conflict: Union[tuple, None] = None,
+        commit=True,
+    ):
         nan = {np.nan: None}
         df = df.astype(object).replace(nan).replace(nan)
 
@@ -348,34 +352,6 @@ class Database:
         query += ",".join(
             [self.cur.mogrify(f"({vals})", x).decode("utf-8") for x in tuples]
         )
-        self.cur.execute(query)
-
-        if not commit:
-            return
-
-        self.commit()
-
-    def execute_batch(
-        self,
-        df,
-        schema: str,
-        table: str,
-        page_size=5000,
-        commit=True,
-        on_conflict: Union[tuple, None] = None,
-    ):
-        nan = {np.nan: None}
-        df = df.astype(object).replace(nan).replace(nan)
-
-        if not len(df):
-            return
-
-        tuples = [tuple(x) for x in df.to_numpy()]
-
-        cols = ",".join(list(df.columns))
-        vals = ",".join(["%s" for _ in df.columns])
-
-        query = f"INSERT INTO {schema}.{table}({cols}) VALUES({vals})"
 
         if on_conflict:
             keys, values = on_conflict
@@ -389,14 +365,23 @@ class Database:
             values = ",".join(values)
             query += f" ON CONFLICT ({keys}) DO UPDATE SET {values}"
 
-        for page in _paginate(tuples, page_size=page_size):
-            sqls = [self.cur.mogrify(query, args) for args in page]
-            self.cur.execute(b";".join(sqls))
+        self.cur.execute(query)
 
         if not commit:
             return
 
         self.commit()
+
+    def execute_batch(
+        self,
+        df,
+        schema: str,
+        table: str,
+        commit=True,
+        on_conflict: Union[tuple, None] = None,
+    ):
+        """function not necessary, just keeping it for backward compatibility"""
+        return self.execute_values(df, schema, table, on_conflict, commit)
 
 
 UNKOWN_PYTHON_APP = "Unknown Python App"
