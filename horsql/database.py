@@ -183,23 +183,6 @@ class Database:
         except AttributeError:
             return Schema(db=self, name=attr)
 
-    def __sanitize_params(self, params: Union[list, tuple, None]):
-        if params is None:
-            return None
-
-        if isinstance(params, list):
-            params = tuple(params)
-
-        if not isinstance(params, tuple):
-            params = (params,)
-
-        if not len(params):
-            return None
-
-        params = tuple([tuple(x) if is_iterable(x) else x for x in params])
-
-        return params
-
     def connect(self):
         self.engine.connect()
         self.con = self.engine.raw_connection()
