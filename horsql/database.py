@@ -4,7 +4,12 @@ import numpy as np
 import urllib.parse
 from typing import Union, List, Any, Optional
 import sys
-from horsql.common import is_iterable
+from horsql.common import (
+    sanitize_params,
+    format_columns,
+    get_correct_conditions,
+    _paginate,
+)
 from horsql.query_builder import build_query
 from horsql.operators import Column, And, Or
 from psycopg2 import extras
@@ -22,87 +27,6 @@ class Table:
     def path(self):
         return f"{self.schema.name}.{self.name}"
 
-    def __columns_to_list(
-        self, value: Union[str, list, None], mount_renames: bool = True
-    ):
-        if value is None:
-            return []
-
-        if isinstance(value, str):
-            value = [x.strip() for x in value.split(",")]
-
-        value = list(value)
-
-        def renames(x):
-            if isinstance(x, tuple) and mount_renames:
-                assert len(x) == 2, 'Input esperado: ("column_name", "renamed_column")'
-
-                return f'{x[0]} "{x[1]}"'
-
-            return x
-
-        value = list(map(renames, value))
-
-        return value
-
-    def __columns_to_agg(self, agg: str, columns: Any):
-        _columns = self.__columns_to_list(columns, mount_renames=False)
-
-        if _columns is None:
-            return _columns
-
-        def agg_renames(x):
-            column = x
-            rename = column
-
-            if isinstance(column, tuple):
-                assert (
-                    len(column) == 2
-                ), 'Input esperado: ("column_name", "renamed_column")'
-                column, rename = column
-
-            return f"{agg}({column}) {rename}"
-
-        result = list(map(agg_renames, _columns))
-
-        return result
-
-    def __format_select(
-        self,
-        columns: Union[str, list, None] = None,
-        distinct: Union[str, list, None] = None,
-        min: Union[str, list, None] = None,
-        max: Union[str, list, None] = None,
-        sum: Union[str, list, None] = None,
-        avg: Union[str, list, None] = None,
-    ):
-        columns = self.__columns_to_list(columns)
-        distinct = self.__columns_to_list(distinct)
-
-        if len(distinct):
-            columns = []
-
-        _min = self.__columns_to_agg("min", min)
-        _max = self.__columns_to_agg("max", max)
-        _sum = self.__columns_to_agg("sum", sum)
-        _avg = self.__columns_to_agg("avg", avg)
-
-        columns = ", ".join([*distinct, *columns, *_min, *_max, *_sum, *_avg])
-
-        if len(distinct):
-            columns = "DISTINCT " + columns
-
-        return columns
-
-    def __get_correct_conditions(
-        self, where: Union[list, And, Or, None] = None, **query
-    ):
-        conditions = where
-        if where is None:
-            conditions = query
-
-        return conditions
-
     def get(
         self,
         columns: Union[str, list, None] = None,
@@ -114,7 +38,7 @@ class Table:
         where: Union[list, And, Or, None] = None,
         **query,
     ):
-        columns = self.__format_select(
+        columns = format_columns(
             columns=columns,
             distinct=distinct,
             min=min,
@@ -123,7 +47,7 @@ class Table:
             avg=avg,
         )
 
-        conditions = self.__get_correct_conditions(where, **query)
+        conditions = get_correct_conditions(where, **query)
 
         return self.db.select(
             columns=columns, origin=self.path(), conditions=conditions, table=self
@@ -291,7 +215,7 @@ class Database:
         return self.cur.execute(query, params)
 
     def fetch(self, sql, params: Union[tuple, list, None] = None):
-        params = self.__sanitize_params(params)
+        params = sanitize_params(params)
 
         if not hasattr(self.cur, "mogrify"):
             return pd.read_sql(sql, self.engine, params=params)
@@ -311,7 +235,7 @@ class Database:
             {where}
         """
 
-        params = self.__sanitize_params(params)
+        params = sanitize_params(params)
 
         if not hasattr(self.cur, "mogrify"):
             raise Exception("mogrify not available")
