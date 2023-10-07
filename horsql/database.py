@@ -140,19 +140,15 @@ class Table:
         where: Union[list, And, Or, None] = None,
         **query,
     ) -> pd.Series:
-        columns = self.__format_select(
+        df = self.get(
             columns=column,
             distinct=distinct,
             min=min,
             max=max,
             sum=sum,
             avg=avg,
-        )
-
-        conditions = self.__get_correct_conditions(where, **query)
-
-        df = self.db.select(
-            columns=columns, origin=self.path(), conditions=conditions, table=self
+            where=where,
+            **query,
         )
 
         return df[df.columns[0]]
