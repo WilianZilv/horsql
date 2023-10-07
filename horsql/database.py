@@ -534,6 +534,7 @@ UNKOWN_PYTHON_APP = "Unknown Python App"
 def connect(
     database: str,
     host: str,
+    port: int,
     user: str,
     password: str,
     dialect: str = "postgresql",
@@ -557,7 +558,7 @@ def connect(
 
     password = urllib.parse.quote_plus(password)
 
-    url = f"{driver}://{user}:{password}@{host}/{database}{application_name}"
+    url = f"{driver}://{user}:{password}@{host}:{port}/{database}{application_name}"
 
     engine = sqlalchemy.create_engine(url=url, pool_size=pool_size, echo=echo)
 
