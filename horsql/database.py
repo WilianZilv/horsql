@@ -157,28 +157,6 @@ class Table:
 
         return df[df.columns[0]]
 
-    def get_list(
-        self,
-        column: Union[str, None] = None,
-        distinct: Union[str, None] = None,
-        min: Union[str, None] = None,
-        max: Union[str, None] = None,
-        sum: Union[str, None] = None,
-        avg: Union[str, None] = None,
-        where: Union[list, And, Or, None] = None,
-        **query,
-    ):
-        return self.get_series(
-            column=column,
-            distinct=distinct,
-            min=min,
-            max=max,
-            sum=sum,
-            avg=avg,
-            where=where,
-            **query,
-        ).tolist()
-
     def get_columns(self) -> List[str]:
         schema_name = self.schema.name
         table_name = self.name
