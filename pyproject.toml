@@ -20,6 +20,8 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = [
     "ipykernel>=6.25.2",
+    "psycopg2-binary>=2.9.9",
+    "mysqlclient>=2.2.0",
 ]
 
 [tool.hatch.metadata]
