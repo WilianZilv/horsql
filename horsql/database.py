@@ -12,7 +12,6 @@ from horsql.common import (
 )
 from horsql.query_builder import build_query
 from horsql.operators import Column, And, Or
-from psycopg2 import extras
 
 
 class Table:
@@ -390,7 +389,9 @@ class Database:
             values = ",".join(values)
             query += f" ON CONFLICT ({keys}) DO UPDATE SET {values}"
 
-        extras.execute_batch(self.cur, query, tuples, page_size)
+        for page in _paginate(tuples, page_size=page_size):
+            sqls = [self.cur.mogrify(query, args) for args in page]
+            self.cur.execute(b";".join(sqls))
 
         if not commit:
             return
