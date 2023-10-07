@@ -97,7 +97,7 @@ class Between(Operator):
 
 class Not(Operator):
     def __init__(self, value):
-        if common.is_iterable(value):
+        if is_iterable(value):
             self.custom = NotIn(value)
         else:
             self.custom = NotEquals(value)
