@@ -2,7 +2,7 @@ import sqlalchemy
 import pandas as pd
 import numpy as np
 import urllib.parse
-from typing import Union, List, Any, Optional
+from typing import Union, List, Optional
 import sys
 from horsql.common import (
     sanitize_params,
@@ -342,7 +342,7 @@ class Database:
         tuples = [tuple(x) for x in df.to_numpy()]
 
         cols = ",".join(list(df.columns))
-        vals = ",".join(["%s" for x in df.columns])
+        vals = ",".join(["%s" for _ in df.columns])
 
         query = f"INSERT INTO {schema}.{table}({cols}) VALUES "
         query += ",".join(
@@ -373,7 +373,7 @@ class Database:
         tuples = [tuple(x) for x in df.to_numpy()]
 
         cols = ",".join(list(df.columns))
-        vals = ",".join(["%s" for x in df.columns])
+        vals = ",".join(["%s" for _ in df.columns])
 
         query = f"INSERT INTO {schema}.{table}({cols}) VALUES({vals})"
 
