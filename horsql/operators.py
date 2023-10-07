@@ -1,4 +1,4 @@
-from common import is_iterable
+from horsql.common import is_iterable
 
 
 class Operator:
