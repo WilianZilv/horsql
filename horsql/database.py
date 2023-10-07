@@ -253,13 +253,7 @@ class Database:
         if not len(columns.strip()):
             columns = "*"
 
-        SQL = f"""
-            SELECT
-            {columns}
-            FROM {origin}
-            {where}
-            {groupby}
-        """
+        SQL = f"SELECT\n{columns}\nFROM\n{origin}\n{where}\n{groupby}"
 
         if table is not None:
             if table.order_sql is not None:
