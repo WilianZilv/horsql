@@ -516,17 +516,6 @@ class Database:
 
         self.commit()
 
-    def register(
-        self, data: pd.DataFrame, schema: str, table: str, index: str, commit=True
-    ):
-        sql = f"SELECT {index} FROM {schema}.{table}"
-        registered_data = pd.read_sql(sql, self.engine, index_col=index)
-
-        data = data[~data[index].isin(registered_data.index)]
-        if len(data) > 0:
-            self.execute_batch(data, schema, table, commit=commit)
-        return data
-
 
 UNKOWN_PYTHON_APP = "Unknown Python App"
 
