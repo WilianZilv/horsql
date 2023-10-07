@@ -1,4 +1,4 @@
-from . import common
+from common import is_iterable
 
 class Operator:
     def __init__(self, value, operator):
@@ -94,7 +94,7 @@ class Not(Operator):
 
 class Is(Operator):
     def __init__(self, value):
-        if common.is_iterable(value):
+        if is_iterable(value):
             self.custom = IsIn(value)
         else:
             self.custom = Equals(value)
