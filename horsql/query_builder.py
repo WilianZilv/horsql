@@ -60,7 +60,7 @@ def build_conditions(conditions: typing.Union[list, dict], condition="and"):
     return f'({f" {condition} ".join(clauses)})', tuple(params)
 
 
-def build_where(conditions):
+def build_query(conditions):
     if not isinstance(conditions, (And, Or)):
         if isinstance(conditions, dict):
             conditions = And(**conditions)

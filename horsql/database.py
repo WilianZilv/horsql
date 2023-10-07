@@ -5,7 +5,7 @@ import urllib.parse
 from typing import Union, List, Any, Optional
 import sys
 from horsql.common import is_iterable
-from horsql.where_builder import build_where
+from horsql.query_builder import build_query
 from horsql.operators import Column, And, Or
 from psycopg2 import extras
 
@@ -329,7 +329,7 @@ class Database:
         return pd.read_sql(sql, self.engine)
 
     def delete(self, origin: str, **kwargs):
-        where, params = build_where(kwargs)
+        where, params = build_query(kwargs)
 
         SQL = f"""
             DELETE
@@ -365,7 +365,7 @@ class Database:
         if isinstance(groupby, list):
             groupby = ", ".join(groupby)
 
-        where, params = build_where(conditions)
+        where, params = build_query(conditions)
 
         if isinstance(groupby, str):
             if len(groupby):
