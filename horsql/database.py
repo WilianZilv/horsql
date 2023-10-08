@@ -100,8 +100,8 @@ class Table:
             df, self.schema.name, self.name, conflict_columns, update_columns, commit
         )
 
-    def delete(self, **kwargs):
-        self.db.delete(self.path(), **kwargs)
+    def delete(self, commit=True, **kwargs):
+        self.db.delete(self.path(), commit=commit, **kwargs)
 
     def limit(self, limit: int):
         self.limit_sql = f"LIMIT {limit}"
@@ -194,7 +194,7 @@ class Database:
         sql = self.mogrify(sql, params)
         return pd.read_sql(sql, self.engine)
 
-    def delete(self, origin: str, **kwargs):
+    def delete(self, origin: str, commit=True, **kwargs):
         where, params = build_query(kwargs)
 
         SQL = f"DELETE FROM {origin} {where}"
@@ -202,6 +202,9 @@ class Database:
         params = sanitize_params(params)
 
         SQL = self.mogrify(SQL, params)
+
+        if not commit:
+            return
 
         self.execute(SQL)
 
