@@ -1,3 +1,4 @@
+from typing import Any, Union
 from horsql.common import is_iterable
 
 
@@ -145,12 +146,20 @@ class NotNull(Operator):
         return []
 
 
-class And(dict):
-    condition = "and"
+class Chain:
+    def __init__(self, *args: Union["Or", "And"], **kwargs: Any):
+        self.chains = list(args)
+        self.value = kwargs
 
 
-class Or(dict):
+class Or(Chain):
     condition = "or"
+    ...
+
+
+class And(Chain):
+    condition = "and"
+    ...
 
 
 class Column:

@@ -1,69 +1,43 @@
 import pandas as pd
-import typing
+from typing import Union
 from horsql.operators import Operator, Is, And, Or
 
 
-def build_conditions(conditions: typing.Union[list, dict], condition="and"):
+def build_conditions(chain: Union[And, Or]):
     clauses = []
     params = []
 
-    if isinstance(conditions, And):
-        condition = "and"
+    condition = chain.condition
 
-    if isinstance(conditions, Or):
-        condition = "or"
+    for item in chain.chains:
+        local_clause, local_params = build_conditions(item)
 
-    if isinstance(conditions, list):
-        for item in conditions:
-            local_clause, local_params = build_conditions(item)
+        clauses.append(local_clause)
+        params.extend(local_params)
 
-            clauses.append(local_clause)
-            params.extend(local_params)
+    local_clauses = []
 
-    if isinstance(conditions, dict):
-        local_clauses = []
+    for key, operator in chain.value.items():
+        if not isinstance(operator, Operator):
+            if isinstance(operator, pd.DataFrame):
+                assert key in operator.columns, f"'{key}' não existe no DataFrame"
+                operator = operator.get(key)
 
-        if isinstance(conditions, list):
-            local_clause, local_params = build_conditions(conditions)
+            operator = Is(operator).custom
 
-            local_clauses.append(local_clause)
-            params.extend(local_params)
+        local_clauses.append(f"{key} {operator.build()}")
+        params.extend(operator.params())
 
-        for key, operator in conditions.items():
-            if key in ["_"]:
-                if not isinstance(operator, (And, Or)):
-                    raise Exception("num sei num sei num sei")
-
-                local_clause, local_params = build_conditions(
-                    operator, operator.condition
-                )
-
-                local_clauses.append(local_clause)
-                params.extend(local_params)
-
-                continue
-
-            if not isinstance(operator, Operator):
-                if isinstance(operator, pd.DataFrame):
-                    assert key in operator.columns, f"'{key}' não existe no DataFrame"
-                    operator = operator.get(key)
-
-                operator = Is(operator).custom
-
-            local_clauses.append(f"{key} {operator.build()}")
-            params.extend(operator.params())
-
+    if len(local_clauses):
         local_clause = f" {condition} ".join(local_clauses)
-
         clauses.append(local_clause)
 
     return f'({f" {condition} ".join(clauses)})', tuple(params)
 
 
 def build_query(conditions):
-    if not isinstance(conditions, (And, Or)):
-        if isinstance(conditions, dict):
-            conditions = And(**conditions)
+    if isinstance(conditions, dict):
+        conditions = And(**conditions)
 
     conditions, params = build_conditions(conditions)
 

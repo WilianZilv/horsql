@@ -213,7 +213,7 @@ class Database:
         columns: Union[str, list],
         origin: str,
         groupby: Union[str, list] = "",
-        conditions: Optional[Union[dict, list]] = None,
+        conditions: Optional[Union[And, Or, dict]] = None,
         table: Optional[Table] = None,
     ):
         if isinstance(columns, list):
