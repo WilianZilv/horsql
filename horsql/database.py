@@ -364,17 +364,6 @@ class Database:
 
         self.commit()
 
-    def execute_batch(
-        self,
-        df,
-        schema: str,
-        table: str,
-        commit=True,
-        on_conflict: Union[tuple, None] = None,
-    ):
-        """function not necessary, just keeping it for backward compatibility"""
-        return self.execute_values(df, schema, table, on_conflict, commit)
-
 
 UNKOWN_PYTHON_APP = "Unknown Python App"
 
