@@ -385,10 +385,10 @@ def connect(
     port: int,
     user: str,
     password: str,
-    dialect: str = "postgresql",
+    dialect: Literal["postgresql", "mysql"] = "postgresql",
     pool_size: int = 5,
     echo: bool = False,
-    app_name: Union[str, None] = None,
+    app_name: Optional[str] = None,
 ) -> Database:
     dialects = {"postgresql": "postgresql+psycopg2", "mysql": "mysql"}
 
