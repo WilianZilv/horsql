@@ -13,6 +13,10 @@ from horsql.query_builder import build_query
 from horsql.operators import Column, And, Or
 
 
+class MogrifyNotAvailable(Exception):
+    ...
+
+
 class Table:
     order_sql: Optional[str] = None
     limit_sql: Optional[str] = None
