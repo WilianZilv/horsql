@@ -47,7 +47,9 @@ class Table:
             count=count,
         )
 
-        conditions = get_correct_conditions(where, **query)
+        conditions = where
+        if where is None:
+            conditions = query
 
         return self.db.select(
             columns=columns, origin=self.path(), conditions=conditions, table=self
