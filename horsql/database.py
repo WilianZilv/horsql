@@ -1,6 +1,5 @@
 import sqlalchemy
 import pandas as pd
-import numpy as np
 import urllib.parse
 from typing import Literal, Union, List, Optional
 import sys
