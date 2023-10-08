@@ -188,21 +188,18 @@ class Database:
         self.con.commit()
 
     def mogrify(self, query: str, params=None):
-        return self.cur.mogrify(query, params).decode("utf-8")
+        if not hasattr(self.cur, "mogrify"):
+            raise MogrifyNotAvailable("mogrify not available")
 
-    def execute(self, query: str, params=None):
-        return self.cur.execute(query, params)
+        sql = self.cur.mogrify(query.strip(), params).decode("utf-8")
+        sql = sql.replace("%", "%%")
+        sql = Column.destroy(sql)
+        return sql
 
     def fetch(self, sql, params: Union[tuple, list, None] = None):
         params = sanitize_params(params)
 
-        if not hasattr(self.cur, "mogrify"):
-            return pd.read_sql(sql, self.engine, params=params)
-
-        sql = self.cur.mogrify(sql.strip(), params).decode().replace("%", "%%")
-
-        sql = Column.destroy(sql)
-
+        sql = self.mogrify(sql, params)
         return pd.read_sql(sql, self.engine)
 
     def delete(self, origin: str, **kwargs):
@@ -216,10 +213,7 @@ class Database:
 
         params = sanitize_params(params)
 
-        if not hasattr(self.cur, "mogrify"):
-            raise Exception("mogrify not available")
-
-        SQL = self.cur.mogrify(SQL.strip(), params).decode().replace("%", "%%")
+        SQL = self.mogrify(SQL, params)
 
         self.execute(SQL)
 
