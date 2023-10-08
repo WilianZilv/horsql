@@ -195,11 +195,7 @@ class Database:
     def delete(self, origin: str, **kwargs):
         where, params = build_query(kwargs)
 
-        SQL = f"""
-            DELETE
-            FROM {origin}
-            {where}
-        """
+        SQL = f"DELETE FROM {origin} {where}"
 
         params = sanitize_params(params)
 
