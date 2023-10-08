@@ -1,6 +1,9 @@
-from typing import Any, Union
+from typing import List, Optional, Union
 import pandas as pd
 import numpy as np
+
+Columns = Union[str, List[str]]
+ColumnsRenames = Union[str, List[Union[str, tuple]]]
 
 
 def is_iterable(x):
@@ -25,7 +28,7 @@ def sanitize_params(params: Union[list, tuple, None]):
     return params
 
 
-def columns_to_list(value: Union[str, list, None], mount_renames: bool = True):
+def columns_to_list(value: Optional[Columns], apply_renames: bool = True):
     if value is None:
         return []
 
@@ -34,21 +37,21 @@ def columns_to_list(value: Union[str, list, None], mount_renames: bool = True):
 
     value = list(value)
 
-    def renames(x):
-        if isinstance(x, tuple) and mount_renames:
-            assert len(x) == 2, 'Input esperado: ("column_name", "renamed_column")'
+    def renames(x: Union[str, tuple]):
+        if isinstance(x, tuple):
+            if apply_renames:
+                assert len(x) == 2, 'Input esperado: ("column_name", "renamed_column")'
 
-            return f'{x[0]} "{x[1]}"'
+                return f'{x[0]} "{x[1]}"'
+            return x[0]
 
         return x
 
-    value = list(map(renames, value))
-
-    return value
+    return list(map(renames, value))
 
 
-def columns_to_agg(agg: str, columns: Any):
-    _columns = columns_to_list(columns, mount_renames=False)
+def columns_to_agg(agg: str, columns: Optional[Columns]):
+    _columns = columns_to_list(columns, apply_renames=False)
 
     if _columns is None:
         return _columns
@@ -69,13 +72,13 @@ def columns_to_agg(agg: str, columns: Any):
 
 
 def format_columns(
-    columns: Union[str, list, None] = None,
-    distinct: Union[str, list, None] = None,
-    min: Union[str, list, None] = None,
-    max: Union[str, list, None] = None,
-    sum: Union[str, list, None] = None,
-    avg: Union[str, list, None] = None,
-    count: Union[str, list, None] = None,
+    columns: Optional[Columns] = None,
+    distinct: Optional[Columns] = None,
+    min: Optional[Columns] = None,
+    max: Optional[Columns] = None,
+    sum: Optional[Columns] = None,
+    avg: Optional[Columns] = None,
+    count: Optional[Columns] = None,
 ):
     columns = columns_to_list(columns)
     distinct = columns_to_list(distinct)
