@@ -37,15 +37,7 @@ class Table:
         where: Union[list, And, Or, None] = None,
         **query,
     ):
-        columns = format_columns(
-            columns=columns,
-            distinct=distinct,
-            min=min,
-            max=max,
-            sum=sum,
-            avg=avg,
-            count=count,
-        )
+        columns = format_columns(columns, distinct, min, max, sum, avg, count)
 
         conditions = where
         if where is None:
