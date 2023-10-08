@@ -69,17 +69,11 @@ class Table:
         return df[df.columns[0]]
 
     def get_columns(self) -> List[str]:
-        schema_name = self.schema.name
-        table_name = self.name
-
-        df = self.db.select(
-            columns="column_name",
-            origin="information_schema.columns",
-            conditions=dict(table_schema=schema_name, table_name=table_name),
-            table=self,
+        series = self.db.information_schema.columns.get_series(
+            column="column_name", table_schema=self.schema.name, table_name=self.name
         )
 
-        return df["column_name"].tolist()
+        return series.tolist()
 
     def create(self, df: pd.DataFrame, commit: bool = True):
         self.db.insert(df, self.schema.name, self.name, commit=commit)
