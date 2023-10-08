@@ -2,9 +2,10 @@ import sqlalchemy
 import pandas as pd
 import numpy as np
 import urllib.parse
-from typing import Union, List, Optional
+from typing import Literal, Union, List, Optional
 import sys
 from horsql.common import (
+    Columns,
     sanitize_params,
     format_columns,
     get_correct_conditions,
@@ -31,14 +32,14 @@ class Table:
 
     def get(
         self,
-        columns: Union[str, list, None] = None,
-        distinct: Union[str, list, None] = None,
-        min: Union[str, list, None] = None,
-        max: Union[str, list, None] = None,
-        sum: Union[str, list, None] = None,
-        avg: Union[str, list, None] = None,
-        count: Union[str, list, None] = None,
-        where: Union[list, And, Or, None] = None,
+        columns: Optional[Columns] = None,
+        distinct: Optional[Columns] = None,
+        min: Optional[Columns] = None,
+        max: Optional[Columns] = None,
+        sum: Optional[Columns] = None,
+        avg: Optional[Columns] = None,
+        count: Optional[Columns] = None,
+        where: Optional[Union[And, Or]] = None,
         **query,
     ):
         columns = format_columns(columns, distinct, min, max, sum, avg, count)
@@ -53,24 +54,14 @@ class Table:
 
     def get_series(
         self,
-        column: Union[str, None] = None,
-        distinct: Union[str, None] = None,
-        min: Union[str, None] = None,
-        max: Union[str, None] = None,
-        sum: Union[str, None] = None,
-        avg: Union[str, None] = None,
-        count: Union[str, None] = None,
-        where: Union[list, And, Or, None] = None,
+        column: Optional[str] = None,
+        distinct: Optional[str] = None,
+        where: Optional[Union[And, Or]] = None,
         **query,
     ) -> pd.Series:
         df = self.get(
             columns=column,
             distinct=distinct,
-            min=min,
-            max=max,
-            sum=sum,
-            avg=avg,
-            count=count,
             where=where,
             **query,
         )
@@ -330,7 +321,7 @@ class Database:
         df,
         schema: str,
         table: str,
-        on_conflict: Union[tuple, None] = None,
+        on_conflict: Optional[tuple] = None,
         commit=True,
     ):
         nan = {np.nan: None}
