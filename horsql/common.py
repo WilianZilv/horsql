@@ -97,9 +97,25 @@ def format_columns(
     return columns
 
 
-def get_correct_conditions(where: Union[list, dict, None] = None, **query):
-    conditions = where
-    if where is None:
-        conditions = query
+def dataframe_tuples(df: pd.DataFrame, columns: Optional[Union[str, list]] = None):
+    if not len(df):
+        return None
 
-    return conditions
+    if isinstance(columns, str):
+        columns = [columns]
+
+    if columns is None:
+        columns = df.columns.tolist()
+
+    nan = {np.nan: None}
+    df = df.astype(object).replace(nan).replace(nan)
+
+    return tuple([tuple(x) for x in df[columns].to_numpy()])
+
+
+def generate_udt_types_map(db, schema: str, table: str):
+    udt_types = db.information_schema.columns.get(
+        ["column_name", "udt_name"], table_schema=schema, table_name=table
+    )
+    udt_types.loc[:, "udt_name"] = "::" + udt_types["udt_name"]
+    return udt_types.set_index("column_name")["udt_name"].to_dict()
