@@ -174,6 +174,12 @@ class Database:
         self.con = self.engine.raw_connection()
         self.cur = self.con.cursor()
 
+    def execute(self, query: str, commit=True):
+        self.cur.execute(query)
+
+        if not commit:
+            self.commit()
+
     def commit(self):
         self.con.commit()
 
