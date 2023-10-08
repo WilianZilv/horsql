@@ -319,35 +319,33 @@ class Database:
         on_conflict: Optional[tuple] = None,
         commit=True,
     ):
-        nan = {np.nan: None}
-        df = df.astype(object).replace(nan).replace(nan)
+        rows = dataframe_tuples(df)
 
-        if not len(df):
+        if rows is None:
             return
 
-        tuples = [tuple(x) for x in df.to_numpy()]
-
         cols = ",".join(list(df.columns))
-        vals = ",".join(["%s" for _ in df.columns])
+        params = ",".join(["%s" for _ in df.columns])
 
         query = f"INSERT INTO {schema}.{table}({cols}) VALUES "
-        query += ",".join(
-            [self.cur.mogrify(f"({vals})", x).decode("utf-8") for x in tuples]
-        )
+        query += ",".join([self.mogrify(f"({params})", row) for row in rows])
 
         if on_conflict:
-            keys, values = on_conflict
-            if not isinstance(keys, list):
-                keys = [keys]
-            if not isinstance(values, list):
-                values = [values]
-            keys = ",".join(keys)
+            primary_key, update_columns = on_conflict
 
-            values = [f"{x} = excluded.{x}" for x in values]
-            values = ",".join(values)
-            query += f" ON CONFLICT ({keys}) DO UPDATE SET {values}"
+            if not isinstance(primary_key, list):
+                primary_key = [primary_key]
 
-        self.cur.execute(query)
+            if not isinstance(update_columns, list):
+                update_columns = [update_columns]
+
+            primary_key = ",".join(primary_key)
+
+            update_columns = [f"{x} = excluded.{x}" for x in update_columns]
+            update_columns = ",".join(update_columns)
+            query += f" ON CONFLICT ({primary_key}) DO UPDATE SET {update_columns}"
+
+        self.execute(query)
 
         if not commit:
             return
