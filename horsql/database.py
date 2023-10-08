@@ -275,36 +275,32 @@ class Database:
         columns: list,
         commit=True,
     ):
-        SQL = """--sql
-            UPDATE {0}.{1} {2}
-            SET {3}
-            FROM (VALUES {4}) AS df ({5})
-            WHERE {6}
-        """
+        all_columns = primary_key + columns
+
+        values = dataframe_tuples(df, all_columns)
+
+        if values is None:
+            return
+
         alias = f"{schema[0]}{table[0]}"
-        values = [
-            tuple(x)
-            for x in df[[*primary_key, *columns]].replace({np.nan: None}).to_numpy()
-        ]
 
-        udt_types = self.information_schema.columns.get(
-            ["column_name", "udt_name"], table_schema=schema, table_name=table
-        )
-        udt_types.loc[:, "udt_name"] = "::" + udt_types["udt_name"]
-        udt_types_map = udt_types.set_index("column_name")["udt_name"].to_dict()
+        udt_types_map = generate_udt_types_map(self, schema, table)
 
-        SQL = SQL.format(
-            schema,
-            table,
-            alias,
-            ", ".join([f"{x} = df.{x}{udt_types_map.get(x, '')}" for x in columns]),
-            ", ".join(["%s"] * len(values)),
-            ", ".join([*primary_key, *columns]),
-            " AND ".join([f"{alias}.{x} = df.{x}" for x in primary_key]),
+        set_sql = ", ".join(
+            [f"{x} = df.{x}{udt_types_map.get(x, '')}" for x in columns]
         )
 
-        SQL = self.cur.mogrify(SQL, tuple(values)).decode()
-        self.cur.execute(SQL)
+        values_sql = ", ".join(["%s"] * len(values))
+        values_columns_sql = ", ".join(all_columns)
+        condition_sql = " AND ".join([f"{alias}.{x} = df.{x}" for x in primary_key])
+
+        SQL = f"UPDATE {schema}.{table} {alias}\n"
+        SQL += f"SET {set_sql}\n"
+        SQL += f"FROM (VALUES {values_sql}) AS df ({values_columns_sql})\n"
+        SQL += f"WHERE {condition_sql}"
+
+        SQL = self.mogrify(SQL, values)
+        self.execute(SQL)
 
         if not commit:
             return
