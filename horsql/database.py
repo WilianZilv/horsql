@@ -1,6 +1,7 @@
 import sqlalchemy
 import pandas as pd
 import urllib.parse
+from pathlib import Path
 from typing import Literal, Union, List, Optional
 import sys
 from horsql.common import (
@@ -350,9 +351,6 @@ class Database:
         self.commit()
 
 
-UNKOWN_PYTHON_APP = "Unknown Python App"
-
-
 def connect(
     database: str,
     host: str,
@@ -370,9 +368,11 @@ def connect(
 
     application_name = ""
     if driver == "postgresql+psycopg2":
-        application_name = (
-            f"?application_name={app_name or sys.argv[0][-16:] or UNKOWN_PYTHON_APP}"
-        )
+        if not app_name:
+            app_path = Path(sys.argv[0])
+            app_name = f"{app_path.parent.name}/{app_path.name}"
+
+        application_name = f"?application_name={app_name}"
 
     password = urllib.parse.quote_plus(password)
 
