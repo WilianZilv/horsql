@@ -101,8 +101,22 @@ class Table:
             df, self.schema.name, self.name, conflict_columns, update_columns, commit
         )
 
-    def delete(self, commit=True, **kwargs):
-        self.db.delete(self.path(), commit=commit, **kwargs)
+    def delete(
+        self,
+        commit=True,
+        chain: Optional[Union[And, Or]] = None,
+        **and_query,
+    ):
+        where, params = build_query(chain, and_query)
+
+        SQL = f"DELETE FROM {self.path()} {where}"
+
+        self.db.execute(SQL, params)
+
+        if not commit:
+            return
+
+        self.db.commit()
 
     def limit(self, limit: int):
         self.limit_sql = f"LIMIT {limit}"
