@@ -68,17 +68,20 @@ class Table:
         self,
         column: Optional[str] = None,
         distinct: Optional[str] = None,
-        where: Optional[Union[And, Or]] = None,
-        **query,
+        chain: Optional[Union[And, Or]] = None,
+        **and_query,
     ) -> pd.Series:
+        if column is None and distinct is None:
+            raise Exception("'column' or 'distinct' must be provided")
+
         df = self.get(
             columns=column,
             distinct=distinct,
-            where=where,
-            **query,
+            chain=chain,
+            **and_query,
         )
 
-        return df[df.columns[0]]
+        return df[column or distinct]
 
     def get_columns(self) -> List[str]:
         series = self.db.information_schema.columns.get_series(
