@@ -253,126 +253,12 @@ class Database:
         sql = self.mogrify(sql, params)
         return pd.read_sql(sql, self.engine)
 
-    def delete(self, origin: str, commit=True, **kwargs):
-        where, params = build_query(kwargs)
-
-        SQL = f"DELETE FROM {origin} {where}"
-
-        params = sanitize_params(params)
-
-        SQL = self.mogrify(SQL, params)
-
-        if not commit:
-            return
-
-        self.execute(SQL)
-
-    def select(
-        self,
-        columns: Union[str, list],
-        origin: str,
-        groupby: Union[str, list] = "",
-        conditions: Optional[Union[And, Or, dict]] = None,
-        table: Optional[Table] = None,
-    ):
-        if isinstance(columns, list):
-            columns = ", ".join(columns)
-
-        if not len(groupby) and ("(" in columns or ")" in columns):
-            e_columns = enumerate(columns.split(", "))
-
-            groupby = [str(i + 1) for i, c in e_columns if "(" not in c or ")" not in c]
-
-        if isinstance(groupby, list):
-            groupby = ", ".join(groupby)
-
-        where, params = build_query(conditions)
-
-        if isinstance(groupby, str):
-            if len(groupby):
-                groupby = f"GROUP BY {groupby}"
-
-        if not len(columns.strip()):
-            columns = "*"
-
-        SQL = f"SELECT\n{columns}\nFROM\n{origin}\n{where}\n{groupby}"
-
-        if table is not None:
-            if table.order_sql is not None:
-                SQL += f"\n{table.order_sql}"
-
-            if table.limit_sql is not None:
-                SQL += f"\n{table.limit_sql}"
-
-        return self.fetch(SQL, params)
-
-    def insert(self, df, schema: str, table: str, commit=True):
-        return self.execute_values(df, schema, table, commit=commit)
-
-    def upsert(
+    def insert(
         self,
         df,
-        schema: str,
-        table: str,
-        on_conflict: list,
-        update: list,
-        commit=True,
-    ):
-        return self.execute_values(
-            df,
-            schema,
-            table,
-            on_conflict=(on_conflict, update),
-            commit=commit,
-        )
-
-    def update(
-        self,
-        df: pd.DataFrame,
-        schema: str,
-        table: str,
-        primary_key: list,
-        columns: list,
-        commit=True,
-    ):
-        all_columns = primary_key + columns
-
-        values = dataframe_tuples(df, all_columns)
-
-        if values is None:
-            return
-
-        alias = f"{schema[0]}{table[0]}"
-
-        udt_types_map = generate_udt_types_map(self, schema, table)
-
-        set_sql = ", ".join(
-            [f"{x} = df.{x}{udt_types_map.get(x, '')}" for x in columns]
-        )
-
-        values_sql = ", ".join(["%s"] * len(values))
-        values_columns_sql = ", ".join(all_columns)
-        condition_sql = " AND ".join([f"{alias}.{x} = df.{x}" for x in primary_key])
-
-        SQL = f"UPDATE {schema}.{table} {alias}\n"
-        SQL += f"SET {set_sql}\n"
-        SQL += f"FROM (VALUES {values_sql}) AS df ({values_columns_sql})\n"
-        SQL += f"WHERE {condition_sql}"
-
-        SQL = self.mogrify(SQL, values)
-        self.execute(SQL)
-
-        if not commit:
-            return
-
-        self.commit()
-
-    def execute_values(
-        self,
-        df,
-        schema: str,
-        table: str,
-        on_conflict: Optional[tuple] = None,
+        path: str,
+        on_conflict: Optional[Columns] = None,
+        update: Optional[Columns] = None,
         commit=True,
     ):
         rows = dataframe_tuples(df)
@@ -383,23 +269,18 @@ class Database:
         cols = ",".join(list(df.columns))
         params = ",".join(["%s" for _ in df.columns])
 
-        query = f"INSERT INTO {schema}.{table}({cols}) VALUES "
+        query = f"INSERT INTO {path}({cols}) VALUES "
         query += ",".join([self.mogrify(f"({params})", row) for row in rows])
 
-        if on_conflict:
-            primary_key, update_columns = on_conflict
+        if on_conflict is not None and update is not None:
+            on_conflict = columns_to_list(on_conflict)
+            update = columns_to_list(update)
 
-            if not isinstance(primary_key, list):
-                primary_key = [primary_key]
+            conflict_columns = ",".join(on_conflict)
 
-            if not isinstance(update_columns, list):
-                update_columns = [update_columns]
-
-            primary_key = ",".join(primary_key)
-
-            update_columns = [f"{x} = excluded.{x}" for x in update_columns]
+            update_columns = [f"{x} = excluded.{x}" for x in update]
             update_columns = ",".join(update_columns)
-            query += f" ON CONFLICT ({primary_key}) DO UPDATE SET {update_columns}"
+            query += f" ON CONFLICT ({conflict_columns}) DO UPDATE SET {update_columns}"
 
         self.execute(query)
 
