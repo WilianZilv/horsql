@@ -6,10 +6,12 @@ from typing import Literal, Union, List, Optional
 import sys
 from horsql.common import (
     Columns,
+    columns_to_list,
     dataframe_tuples,
+    format_groupby,
     generate_udt_types_map,
     sanitize_params,
-    format_columns,
+    format_select,
 )
 from horsql.query_builder import build_query
 from horsql.operators import Column, And, Or
@@ -40,18 +42,27 @@ class Table:
         sum: Optional[Columns] = None,
         avg: Optional[Columns] = None,
         count: Optional[Columns] = None,
-        where: Optional[Union[And, Or]] = None,
-        **query,
+        chain: Optional[Union[And, Or]] = None,
+        **and_query,
     ):
-        columns = format_columns(columns, distinct, min, max, sum, avg, count)
+        select = format_select(columns, distinct, min, max, sum, avg, count)
 
-        conditions = where
-        if where is None:
-            conditions = query
+        columns = columns_to_list(columns)
+        distinct = columns_to_list(distinct)
 
-        return self.db.select(
-            columns=columns, origin=self.path(), conditions=conditions, table=self
-        )
+        groupby = format_groupby(columns, select)
+
+        where, params = build_query(chain, and_query)
+
+        SQL = f"{select}\nFROM\n{self.path()}\n{where}\n{groupby}"
+
+        if self.order_sql is not None:
+            SQL += f"\n{self.order_sql}"
+
+        if self.limit_sql is not None:
+            SQL += f"\n{self.limit_sql}"
+
+        return self.db.fetch(SQL, params)
 
     def get_series(
         self,

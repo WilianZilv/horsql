@@ -71,7 +71,7 @@ def columns_to_agg(agg: str, columns: Optional[Columns]):
     return result
 
 
-def format_columns(
+def format_select(
     columns: Optional[Columns] = None,
     distinct: Optional[Columns] = None,
     min: Optional[Columns] = None,
@@ -83,6 +83,9 @@ def format_columns(
     columns = columns_to_list(columns)
     distinct = columns_to_list(distinct)
 
+    if len(distinct) and len(columns):
+        raise Exception("use 'columns' or 'distinct', not both")
+
     if len(distinct):
         columns = []
 
@@ -92,12 +95,15 @@ def format_columns(
     _avg = columns_to_agg("avg", avg)
     _count = columns_to_agg("count", count)
 
-    columns = ", ".join([*distinct, *columns, *_min, *_max, *_sum, *_avg, *_count])
+    _columns = ", ".join([*distinct, *columns, *_min, *_max, *_sum, *_avg, *_count])
 
     if len(distinct):
-        columns = "DISTINCT " + columns
+        _columns = "DISTINCT " + _columns
 
-    return columns
+    if not len(_columns):
+        _columns = "*"
+
+    return f"SELECT\n{_columns}"
 
 
 def dataframe_tuples(df: pd.DataFrame, columns: Optional[Union[str, list]] = None):
@@ -116,9 +122,25 @@ def dataframe_tuples(df: pd.DataFrame, columns: Optional[Union[str, list]] = Non
     return tuple([tuple(x) for x in df[columns].to_numpy()])
 
 
-def generate_udt_types_map(db, schema: str, table: str):
+def generate_udt_types_map(db, table):
     udt_types = db.information_schema.columns.get(
-        ["column_name", "udt_name"], table_schema=schema, table_name=table
+        ["column_name", "udt_name"],
+        table_schema=table.schema.name,
+        table_name=table.name,
     )
     udt_types.loc[:, "udt_name"] = "::" + udt_types["udt_name"]
     return udt_types.set_index("column_name")["udt_name"].to_dict()
+
+
+def format_groupby(columns: Columns, select: str):
+    groupby = ""
+
+    if len(columns) != len(select.split(",")):
+        groupby_keys = list(range(1, len(columns) + 1))
+        groupby_keys = list(map(str, groupby_keys))
+
+        if len(groupby_keys):
+            groupby = "GROUP BY "
+            groupby += ", ".join(groupby_keys)
+
+    return groupby
