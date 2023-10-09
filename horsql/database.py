@@ -192,9 +192,7 @@ class Database:
         sql = Column.destroy(sql)
         return sql
 
-    def fetch(self, sql, params: Union[tuple, list, None] = None):
-        params = sanitize_params(params)
-
+    def fetch(self, sql: str, params: Union[tuple, list, None] = None):
         sql = self.mogrify(sql, params)
         return pd.read_sql(sql, self.engine)
 
