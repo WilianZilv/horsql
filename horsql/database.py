@@ -216,7 +216,7 @@ class Schema:
 
 
 class Database:
-    def __init__(self, engine):
+    def __init__(self, engine: sqlalchemy.Engine):
         self.engine = engine
         self.connect()
 
@@ -227,15 +227,13 @@ class Database:
             return Schema(db=self, name=attr)
 
     def connect(self):
-        self.engine.connect()
-        self.con = self.engine.raw_connection()
-        self.cur = self.con.cursor()
+        self.con = self.engine.connect()
+        self.cur = self.engine.raw_connection().cursor()
 
     def execute(self, sql: str, params: Optional[tuple] = None):
         if params is not None:
             sql = self.mogrify(sql, params)
-
-        self.cur.execute(sql)
+        self.con.execute(sqlalchemy.text(sql))
 
     def commit(self):
         self.con.commit()
