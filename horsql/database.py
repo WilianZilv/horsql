@@ -232,7 +232,9 @@ class Database:
         self.cur = self.con.cursor()
 
     def execute(self, sql: str, params: Optional[tuple] = None):
-        sql = self.mogrify(sql, params)
+        if params is not None:
+            sql = self.mogrify(sql, params)
+
         self.cur.execute(sql)
 
     def commit(self):
