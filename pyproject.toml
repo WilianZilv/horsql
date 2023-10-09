@@ -1,6 +1,6 @@
 [project]
 name = "horsql"
-version = "0.1.19"
+version = "0.1.20"
 description = "An experimental SQL ORM that operates with Pandas DataFrames, offering the flexibility of dynamic querying without the need for model or schema definitions."
 authors = [
     { name = "Wilian", email = "wilianzilv@gmail.com" }
