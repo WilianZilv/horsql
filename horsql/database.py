@@ -90,8 +90,20 @@ class Table:
 
         return series.tolist()
 
-    def create(self, df: pd.DataFrame, commit: bool = True):
-        self.db.insert(df, self.schema.name, self.name, commit=commit)
+    def insert(
+        self,
+        df: pd.DataFrame,
+        on_conflict: Optional[Columns] = None,
+        update: Optional[Columns] = None,
+        commit: bool = True,
+    ):
+        self.db.insert(
+            df,
+            path=self.path(),
+            on_conflict=on_conflict,
+            update=update,
+            commit=commit,
+        )
 
     def update(
         self,
