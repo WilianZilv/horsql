@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Union
+from typing import Optional, Union
 from horsql.operators import Operator, Is, And, Or
 
 
@@ -35,15 +35,20 @@ def build_conditions(chain: Union[And, Or]):
     return f'({f" {condition} ".join(clauses)})', tuple(params)
 
 
-def build_query(conditions):
+def build_query(chain: Optional[Union[And, Or]] = None, and_query: dict = dict()):
+    if chain is not None and len(and_query):
+        raise Exception("use 'chain' or 'and_query', not both")
+
+    conditions = chain or and_query
+
     if isinstance(conditions, dict):
         conditions = And(**conditions)
 
-    conditions, params = build_conditions(conditions)
+    conditions_str, params = build_conditions(conditions)
 
-    if conditions == "()":
-        return "", []
+    if conditions_str == "()":
+        return "", tuple()
 
-    where = "WHERE " + conditions
+    where = "WHERE " + conditions_str
 
     return where, params
