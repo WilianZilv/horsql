@@ -104,17 +104,6 @@ class Table:
             df, self.schema.name, self.name, conflict_columns, update_columns, commit
         )
 
-    def upsert(
-        self,
-        df: pd.DataFrame,
-        conflict_columns: list,
-        update_columns: list,
-        commit: bool = True,
-    ):
-        self.db.upsert(
-            df, self.schema.name, self.name, conflict_columns, update_columns, commit
-        )
-
     def delete(
         self,
         commit=True,
