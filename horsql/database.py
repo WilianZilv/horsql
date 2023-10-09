@@ -184,6 +184,8 @@ class Database:
         if not hasattr(self.cur, "mogrify"):
             raise MogrifyNotAvailable("mogrify not available")
 
+        params = sanitize_params(params)
+
         sql = self.cur.mogrify(query.strip(), params).decode("utf-8")
         sql = sql.replace("%", "%%")
         sql = Column.destroy(sql)
