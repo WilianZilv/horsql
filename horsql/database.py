@@ -42,19 +42,19 @@ class Table:
         sum: Optional[Columns] = None,
         avg: Optional[Columns] = None,
         count: Optional[Columns] = None,
-        chain: Optional[Union[And, Or]] = None,
-        **and_query,
+        where: Optional[Union[And, Or]] = None,
+        **and_where,
     ):
-        select = format_select(columns, distinct, min, max, sum, avg, count)
+        select_sql = format_select(columns, distinct, min, max, sum, avg, count)
 
         columns = columns_to_list(columns)
         distinct = columns_to_list(distinct)
 
-        groupby = format_groupby(columns, select)
+        groupby_sql = format_groupby(columns, select_sql)
 
-        where, params = build_query(chain, and_query)
+        where_sql, params = build_query(where, and_where)
 
-        SQL = f"{select}\nFROM\n{self.path()}\n{where}\n{groupby}"
+        SQL = f"{select_sql}\nFROM\n{self.path()}\n{where_sql}\n{groupby_sql}"
 
         if self.order_sql is not None:
             SQL += f"\n{self.order_sql}"
@@ -68,8 +68,8 @@ class Table:
         self,
         column: Optional[str] = None,
         distinct: Optional[str] = None,
-        chain: Optional[Union[And, Or]] = None,
-        **and_query,
+        where: Optional[Union[And, Or]] = None,
+        **and_where,
     ) -> pd.Series:
         if column is None and distinct is None:
             raise Exception("'column' or 'distinct' must be provided")
@@ -77,8 +77,8 @@ class Table:
         df = self.get(
             columns=column,
             distinct=distinct,
-            chain=chain,
-            **and_query,
+            where=where,
+            **and_where,
         )
 
         return df[column or distinct]
@@ -147,12 +147,12 @@ class Table:
     def delete(
         self,
         commit=True,
-        chain: Optional[Union[And, Or]] = None,
-        **and_query,
+        where: Optional[Union[And, Or]] = None,
+        **and_where,
     ):
-        where, params = build_query(chain, and_query)
+        where_sql, params = build_query(where, and_where)
 
-        SQL = f"DELETE FROM {self.path()} {where}"
+        SQL = f"DELETE FROM {self.path()} {where_sql}"
 
         self.db.execute(SQL, params)
 
