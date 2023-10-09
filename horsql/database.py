@@ -366,10 +366,6 @@ def connect(
 ) -> Database:
     dialects = {"postgresql": "postgresql+psycopg2", "mysql": "mysql"}
 
-    assert dialect in dialects.keys(), 'Available "dialects": %s' % list(
-        dialects.keys()
-    )
-
     driver = dialects[dialect]
 
     application_name = ""
