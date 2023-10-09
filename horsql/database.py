@@ -90,7 +90,7 @@ class Table:
 
         return series.tolist()
 
-    def insert(
+    def create(
         self,
         df: pd.DataFrame,
         on_conflict: Optional[Columns] = None,
