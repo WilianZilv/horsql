@@ -108,13 +108,41 @@ class Table:
     def update(
         self,
         df: pd.DataFrame,
-        conflict_columns: list,
-        update_columns: list,
+        on_conflict: Columns,
+        update: Columns,
         commit: bool = True,
     ):
-        self.db.update(
-            df, self.schema.name, self.name, conflict_columns, update_columns, commit
-        )
+        on_conflict = columns_to_list(on_conflict)
+        update = columns_to_list(update)
+
+        all_columns = on_conflict + update
+
+        values = dataframe_tuples(df, all_columns)
+
+        if values is None:
+            return
+
+        alias = f"{self.schema.name[0]}{self.name}"
+
+        udt_types_map = generate_udt_types_map(self.db, self)
+
+        set_sql = ", ".join([f"{x} = df.{x}{udt_types_map.get(x, '')}" for x in update])
+
+        values_sql = ", ".join(["%s"] * len(values))
+        values_columns_sql = ", ".join(all_columns)
+        condition_sql = " AND ".join([f"{alias}.{x} = df.{x}" for x in on_conflict])
+
+        SQL = f"UPDATE {self.schema.name}.{self.name} {alias}\n"
+        SQL += f"SET {set_sql}\n"
+        SQL += f"FROM (VALUES {values_sql}) AS df ({values_columns_sql})\n"
+        SQL += f"WHERE {condition_sql}"
+
+        self.db.execute(SQL, values)
+
+        if not commit:
+            return
+
+        self.db.commit()
 
     def delete(
         self,
