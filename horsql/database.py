@@ -1,3 +1,4 @@
+import re
 import sqlalchemy
 import pandas as pd
 import urllib.parse
@@ -246,7 +247,7 @@ class Database:
 
         sql = self.cur.mogrify(query.strip(), params).decode("utf-8")
         sql = sql.replace("%", "%%")
-        sql = Column.destroy(sql)
+        sql = re.sub(r"'@(\w+)'", r'"\1"', sql)
         return sql
 
     def fetch(self, sql: str, params: Union[tuple, list, None] = None):
